@@ -20,7 +20,7 @@ void Teseo::init(long baudrate) {
 	Serial1.begin(baudrate);
 }
 
-void Teseo::flush_buffer(void)
+void Teseo::flush_buffer(unsigned long wait_ms)
 {
 	unsigned long start = millis();
 	while (millis() - start < 100) {
