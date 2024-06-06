@@ -31,7 +31,7 @@ void Teseo::flush_buffer(void)
 	}
 }
 
-void Teseo::get_data(int print_enable = 0)
+void Teseo::get_data(int print_enable)
 {
 	char linebuf[128];
     int idx = 0;
@@ -195,14 +195,18 @@ void Teseo::print_data(void)
     Serial.print(rmc.sec);
     Serial.print("\r\n");
     Serial.print("Status: ");
-    Serial.print(rmc.status);
-    Serial.print("\r\n");
+    if (rmc.status == 'A') {
+        Serial.println("A : Active (valid)");
+    } else {
+        Serial.print(rmc.status);
+        Serial.println(" : Void");
+    }
     Serial.print("Lat(N)/Lon(W): ");
     Serial.print(rmc.lat);
     Serial.print(" ");
     Serial.print(rmc.lon);
     Serial.print("\r\n");
-    Serial.print("Speed: ");
+    Serial.print("Speed (knots): ");
     Serial.print(rmc.speed);
     Serial.print("\r\n");
     Serial.print("Date/Month/Year: ");
@@ -265,6 +269,48 @@ void Teseo::build_checksum(char* line, char* csum_text)
     csum_text[2] = 0;
 }
 
+void Teseo::send_command(const char * cmd) {
+    // append asterisk
+    char line[128];
+    strcpy(line, cmd);
+    strcat(line, "*");
+    // calculate checksum
+    char csum_text[3];
+    build_checksum(line, csum_text);
+    strcat(line, csum_text);
+    // send the command
+    Serial1.print(line);
+    Serial1.print("\r\n");
+}
+
+void Teseo::wait_send_complete(void) {
+    Serial1.flush(); // this command waits until the send buffer is empty
+
+}
+
+void Teseo::send_and_read(const char* cmd, char* response, int max_len, unsigned long max_wait_ms) {
+    send_command(cmd);
+    wait_send_complete();
+    // read the response
+    int idx = 0;
+    response[0]=0; // assume no response initially
+    unsigned long start = millis();
+    while (millis() - start < max_wait_ms) {
+        while (Serial1.available()) {
+            char c = Serial1.read();
+            if (c == 0x0a) {
+                response[idx] = 0;
+                return;
+            } else {
+                response[idx++] = c;
+                if (idx == max_len - 1) {
+                    response[idx] = 0;
+                    return;
+                }
+            }
+        }
+    }
+}
 
 // *************************************************
 // ****   End of Teseo class implementation  ****

@@ -57,9 +57,12 @@ class Teseo
     Teseo();
     void init(long baudrate);
     void flush_buffer(void);
-    void get_data(int print_enable);
+    void get_data(int print_enable = 0);
     void print_data(void);
     void build_checksum(char* line, char* csum_text);
+    void send_command(const char* cmd);
+    void wait_send_complete(void);
+    void send_and_read(const char* cmd, char* response, int max_len, unsigned long max_wait_ms = 100);
 
     gsv_t gsv[MAX_SAT]; // satellite information
     rmc_t rmc; // date/time/lat/lon/speed
