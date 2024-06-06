@@ -75,8 +75,10 @@ class Teseo
     // This function may take up to 1 second to execute, 
     // if the NMEA sentences repeat every 1 second.
     // To view the raw GNSS sentences on the Arduino Serial Monitor, use
-    // get_data(PRINT_ENABLE), otherwise use get_data(PRINT_DISABLE)
-    void get_data(int print_enable = 0);
+    // get_data(PRINT_ENABLE), otherwise use get_data(PRINT_DISABLE).
+    // The function returns the number of valid NMEA sentences found, and 
+    // returns -1 if absolutely no UART activity occured
+    int get_data(int print_enable = 0, unsigned long max_wait_ms = 1100);
     // print_data sends the decoded content in user-friendly text, to the
     // Arduino Serial Monitor
     void print_data(void);

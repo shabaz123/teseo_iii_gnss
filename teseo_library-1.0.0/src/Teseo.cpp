@@ -23,7 +23,7 @@ void Teseo::init(long baudrate) {
 void Teseo::flush_buffer(unsigned long wait_ms)
 {
 	unsigned long start = millis();
-	while (millis() - start < 100) {
+	while (millis() - start < wait_ms) {
 		while (Serial1.available()) {
 			Serial1.read();
 			start = millis();
@@ -31,23 +31,35 @@ void Teseo::flush_buffer(unsigned long wait_ms)
 	}
 }
 
-void Teseo::get_data(int print_enable)
+int Teseo::get_data(int print_enable, unsigned long max_wait_ms)
 {
 	char linebuf[128];
     int idx = 0;
     char source;
-    // clear out the satellite data
+    unsigned long start;
+    int sentences_found = 0;
+    // wait for serial data to arrive, then parse it all until
+    // the serial stream has been clear for 10 msec. If no data arrives
+    // within max_wait_ms, exit the function
+    start = millis();
+    char available_flag = 0;
+    while (millis() - start < max_wait_ms) {
+        if (Serial1.available()) {
+            available_flag = 1;
+            break;
+        }
+    }
+    if (available_flag==0) {
+        return(-1); // abort, nothing arrived within max_wait_ms period
+    }
+    // ok, data is available, first clear out the satellite data
 	satnum = 0;
     for (int i = 0; i < MAX_SAT; i++) {
         gsv[i].prn = SOURCE_INVALID;
     }
-    // wait for serial data to arrive, then parse it all until
-    //the serial stream has been clear for 100 msec
-    while (!Serial1.available());
-    // ok, data is available, start reading it
     // read the data, one line at a time (0x0a terminated)
-    unsigned long start = millis();
-    while (millis() - start < 100) {
+    start = millis();
+    while (millis() - start < 10) {
         while (Serial1.available()) {
             char c = Serial1.read();
             if (c == 0x0a) {
@@ -102,6 +114,7 @@ void Teseo::get_data(int print_enable)
                             }
                             gsv[satnum].source = source;
                             satnum++;
+                            sentences_found++;
                         } 
                     }
                     // **** test for RMC ***
@@ -145,6 +158,7 @@ void Teseo::get_data(int print_enable)
                         rmc.year = (p[4] - '0') * 10 + (p[5] - '0');
                         // add 2000 to year
                         rmc.year += 2000;
+                        sentences_found++;
                     }
                     // *** test for GGA ***
                     if (strncmp(&linebuf[3], "GGA", 3)==0) {
@@ -162,6 +176,7 @@ void Teseo::get_data(int print_enable)
                         gga.geosep = atof(p); // geoid separation
                         p = strchr(p, ',') + 1;
                         gga.geounit = *p; // geoid separation unit
+                        sentences_found++;
                     }
                     // ****** add more NMEA sentences here ********
                 }
@@ -175,8 +190,9 @@ void Teseo::get_data(int print_enable)
             }
             start = millis();
         }
-        // loop until the serial stream has been clear for 100 msec
+        // loop until the serial stream has been clear for 10 msec
     }
+    return(sentences_found);
 }
 
 void Teseo::print_data(void)
