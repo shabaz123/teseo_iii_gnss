@@ -23,6 +23,8 @@ U1: Lantronix PNT-SG3FS or (possibly) ST TESEO-LIV3F
 U3: LM1117MP-3.3 voltage regulator, SOT-223
 ```
 
+<img width="100%" align="left" src="board-layout.jpg">
+
 To test the board, it is recommended to obtain a USB-UART adapter, and download ST Teseo Suite Pro.
 
 The repository also contains an Arduino library. The Arduino must use **3.3V logic-levels** (_not_ 5V), and must support a **Serial1** interface. The Arduino Uno R3, and the classic Arduino Nano, do _not_ support a Serial1 interface.
